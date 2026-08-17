@@ -287,8 +287,8 @@
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global environment variables provided by platform
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'book-matrix-tracker-default';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        
+        const firebaseConfig = {
             apiKey: "AIzaSyDlhkPd7gu20H8Ufe5-tm-gQQXSJM39rsM",
             authDomain: "readingtracker26-27.firebaseapp.com",
             databaseURL: "https://readingtracker26-27-default-rtdb.asia-southeast1.firebasedatabase.app",
