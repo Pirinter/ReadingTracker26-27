@@ -283,11 +283,13 @@
     <!-- FIREBASE MODULES & APP SCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global environment variables provided by platform
+        // Permanent unique application ID for your GitHub Pages deployment
+        const appId = 'readingtracker26-app';
         
+        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDlhkPd7gu20H8Ufe5-tm-gQQXSJM39rsM",
             authDomain: "readingtracker26-27.firebaseapp.com",
@@ -307,20 +309,17 @@
         // Global application state
         let students = [];
         let books = [];
-        let checks = {}; // Format: { "studentId_bookId": true }
+        let checks = {}; 
         let isTeacherMode = false;
         let currentStudentGender = 'Boy';
-        let pendingCheckCell = null; // Stores { studentId, bookId, currentState } for confirmation modal
+        let pendingCheckCell = null; 
         const TEACHER_PASSWORD = "0800";
 
         // Initialize Authentication and Listeners
         async function initApp() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Sign in anonymously for GitHub deployment
+                await signInAnonymously(auth);
                 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
@@ -337,7 +336,6 @@
         function setupCloudListeners() {
             const pubDataPath = `artifacts/${appId}/public/data`;
 
-            // Listen to Students collection
             onSnapshot(collection(db, pubDataPath, 'students'), (snapshot) => {
                 students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderAll();
@@ -347,7 +345,6 @@
                 hideLoader();
             });
 
-            // Listen to Books collection
             onSnapshot(collection(db, pubDataPath, 'books'), (snapshot) => {
                 books = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderAll();
@@ -355,7 +352,6 @@
                 console.error("Books sync error:", error);
             });
 
-            // Listen to Checks collection
             onSnapshot(collection(db, pubDataPath, 'checks'), (snapshot) => {
                 checks = {};
                 snapshot.docs.forEach(d => {
@@ -575,17 +571,14 @@
             const isCurrentlyChecked = checks[key] === true;
 
             if (isCurrentlyChecked) {
-                // If already checked, students cannot untick it. Only admin can.
                 if (!isTeacherMode) {
                     showCustomModal("Reading Verified", "This book read has already been confirmed and locked. Only a teacher can modify verified reading records.", false);
                     return;
                 } else {
-                    // Admin is toggling it off
                     confirmToggleCell(studentId, bookId, true);
                     return;
                 }
             } else {
-                // Student wants to tick and confirm reading
                 pendingCheckCell = { studentId, bookId, currentState: false };
                 const student = students.find(s => s.id === studentId);
                 const book = books.find(b => b.id === bookId);
@@ -642,7 +635,6 @@
             if (!isTeacherMode) return;
             try {
                 const pubDataPath = `artifacts/${appId}/public/data`;
-                // Delete all documents in checks collection or reset them
                 const promises = Object.keys(checks).map(key => deleteDoc(doc(db, pubDataPath, 'checks', key)));
                 await Promise.all(promises);
                 showCustomModal("Matrix Reset", "All reading checkmarks have been successfully cleared.");
@@ -662,15 +654,12 @@
             }
 
             let csvRows = [];
-            
-            // Header row: Book Title, Author, then Student names
             let header = ["Book Title", "Author"];
             students.forEach(s => {
                 header.push(`"${s.name.replace(/"/g, '""')} (${s.gender})"`);
             });
             csvRows.push(header.join(","));
 
-            // Rows for each book
             books.forEach(b => {
                 let row = [`"${b.title.replace(/"/g, '""')}"`, `"${(b.author || '').replace(/"/g, '""')}"`];
                 students.forEach(s => {
@@ -695,21 +684,17 @@
 
         // --- Rendering Logic ---
         function renderAll() {
-            // Update Stats
             document.getElementById('stat-total-students').innerText = students.length;
             document.getElementById('stat-total-books').innerText = books.length;
             const totalReads = Object.values(checks).filter(val => val === true).length;
             document.getElementById('stat-total-reads').innerText = totalReads;
 
-            // Badges
             document.getElementById('students-count-badge').innerText = `${students.length} Students`;
             document.getElementById('books-count-badge').innerText = `${books.length} Books`;
 
-            // Render Lists in Management Views
             renderStudentsList();
             renderBooksList();
 
-            // If matrix view is active, render it
             if (!document.getElementById('view-matrix').classList.contains('hidden')) {
                 renderMatrix();
             }
@@ -735,7 +720,6 @@
                 return;
             }
 
-            // Filter students by gender dropdown
             const genderFilter = document.getElementById('matrix-gender-filter')?.value || 'All';
             const filteredStudents = genderFilter === 'All' ? students : students.filter(s => s.gender === genderFilter);
 
@@ -748,9 +732,7 @@
                 return;
             }
 
-            // Sort students alphabetically
             const sortedStudents = [...filteredStudents].sort((a, b) => a.name.localeCompare(b.name));
-            // Sort books alphabetically
             const sortedBooks = [...books].sort((a, b) => a.title.localeCompare(b.title));
 
             let html = `
