@@ -825,43 +825,68 @@
         }
 
         function renderStudentsList() {
-            const listEl = document.getElementById('students-list');
-            if (!listEl) return;
+    const listEl = document.getElementById('students-list');
+    if (!listEl) return;
 
-            if (students.length === 0) {
-                listEl.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">No students added yet.</p>`;
-                return;
-            }
+    if (students.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">No students added yet.</p>`;
+        return;
+    }
 
-            listEl.innerHTML = students.map(s => {
-                let studentReadCount = 0;
-                books.forEach(b => {
-                    if (checks[`${s.id}_${b.id}`] === true) studentReadCount++;
-                });
+    // 1. Create a sorted copy of the students array by books read (descending order)
+    const sortedStudents = [...students].sort((a, b) => {
+        let countA = 0;
+        let countB = 0;
+        
+        // Count books read for student A
+        books.forEach(b => {
+            if (checks[`${a.id}_${b.id}`] === true) countA++;
+        });
+        
+        // Count books read for student B
+        books.forEach(b => {
+            if (checks[`${b.id}_${b.id}`] === true) countB++; // Make sure to use b.id here!
+        });
 
-                return `
-                    <div class="p-4 rounded-2xl bg-gray-50/60 border border-gray-100 flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                                ${s.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <p class="font-bold text-sm text-slate-800">${s.name}</p>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${s.gender === 'Boy' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}">${s.gender}</span>
-                                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">📚 ${studentReadCount} books read</span>
-                                </div>
-                            </div>
-                        </div>
-                        ${isTeacherMode ? `
-                            <button onclick="deleteStudent('${s.id}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Delete Student">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        ` : ''}
+        return countB - countA; // Highest count first
+    });
+
+    // 2. Map through the sorted list
+    listEl.innerHTML = sortedStudents.map((s, index) => {
+        let studentReadCount = 0;
+        books.forEach(b => {
+            if (checks[`${s.id}_${b.id}`] === true) studentReadCount++;
+        });
+
+        // Optional: Add a trophy or rank badge for top readers!
+        let rankBadge = '';
+        if (index === 0 && studentReadCount > 0) rankBadge = '🥇';
+        else if (index === 1 && studentReadCount > 0) rankBadge = '🥈';
+        else if (index === 2 && studentReadCount > 0) rankBadge = '🥉';
+
+        return `
+            <div class="p-4 rounded-2xl bg-gray-50/60 border border-gray-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                        ${rankBadge ? rankBadge : s.name.charAt(0).toUpperCase()}
                     </div>
-                `;
-            }).join('');
-        }
+                    <div>
+                        <p class="font-bold text-sm text-slate-800">${s.name} ${rankBadge ? `<span class="text-xs font-normal text-gray-400">(#${index + 1})</span>` : ''}</p>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${s.gender === 'Boy' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}">${s.gender}</span>
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">📚 ${studentReadCount} books read</span>
+                        </div>
+                    </div>
+                </div>
+                ${isTeacherMode ? `
+                    <button onclick="deleteStudent('${s.id}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Delete Student">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
 
         function renderBooksList() {
             const listEl = document.getElementById('books-list');
